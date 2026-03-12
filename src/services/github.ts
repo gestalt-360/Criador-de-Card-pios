@@ -175,7 +175,7 @@ export const publishToGithub = async (token: string, repoName: string, menu: Men
 
     // Get default branch
     let branch = 'main';
-    const repoRes = await fetch(`https://api.github.com/repos/${username}/${repoName}`, { headers });
+    const repoRes = await fetch(`https://api.github.com/repos/${username}/${repoName}`, { headers, cache: 'no-store' });
     if (repoRes.ok) {
         const repoData = await repoRes.json();
         branch = repoData.default_branch || 'main';
@@ -184,14 +184,19 @@ export const publishToGithub = async (token: string, repoName: string, menu: Men
     // 3. Create/Update index.html
     const htmlContent = generateStandaloneHTML(menu);
     const utf8Bytes = new TextEncoder().encode(htmlContent);
-    let binary = '';
-    for (let i = 0; i < utf8Bytes.byteLength; i++) {
-        binary += String.fromCharCode(utf8Bytes[i]);
-    }
-    const encodedContent = btoa(binary);
+    
+    const encodedContent = await new Promise<string>((resolve) => {
+        const blob = new Blob([utf8Bytes]);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            resolve(dataUrl.split(',')[1]);
+        };
+        reader.readAsDataURL(blob);
+    });
 
     // Check if file exists to get SHA
-    const fileRes = await fetch(`https://api.github.com/repos/${username}/${repoName}/contents/index.html`, { headers });
+    const fileRes = await fetch(`https://api.github.com/repos/${username}/${repoName}/contents/index.html`, { headers, cache: 'no-store' });
     let sha = undefined;
     if (fileRes.ok) {
         const fileData = await fileRes.json();
@@ -210,17 +215,23 @@ export const publishToGithub = async (token: string, repoName: string, menu: Men
     });
 
     if (!putFileRes.ok) {
-        throw new Error('Erro ao fazer upload do arquivo HTML.');
+        const errorData = await putFileRes.json().catch(() => ({ message: putFileRes.statusText }));
+        throw new Error(`Erro ao fazer upload do arquivo HTML: ${errorData.message}`);
     }
 
     // 4. Enable GitHub Pages
-    await fetch(`https://api.github.com/repos/${username}/${repoName}/pages`, {
+    const pagesRes = await fetch(`https://api.github.com/repos/${username}/${repoName}/pages`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
             source: { branch: branch, path: '/' }
         })
     });
+    
+    if (!pagesRes.ok && pagesRes.status !== 409) {
+        const errorData = await pagesRes.json().catch(() => ({ message: pagesRes.statusText }));
+        console.error('Erro ao ativar GitHub Pages:', errorData.message);
+    }
 
     return `https://${username}.github.io/${repoName}`;
 };

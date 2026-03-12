@@ -38,6 +38,18 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
     }
   };
 
+  const handleOpenPublishModal = () => {
+    const slug = menu.name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '')
+      .substring(0, 100);
+    setRepoName(slug || 'meu-cardapio');
+    setShowPublishModal(true);
+  };
+
   const addCategory = () => {
     const newCategory: MenuCategory = {
       id: crypto.randomUUID(),
@@ -468,7 +480,7 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
       {/* Footer / Publish Button */}
       <div className="pt-8 pb-4 border-t border-slate-800 mt-8">
         <button 
-          onClick={() => setShowPublishModal(true)}
+          onClick={handleOpenPublishModal}
           className="w-full py-4 rounded-2xl font-bold text-lg shadow-xl flex items-center justify-center gap-2 transition-transform active:scale-95 bg-cyan-500 text-slate-950 hover:bg-cyan-400"
         >
           <Globe className="w-5 h-5" />
@@ -517,8 +529,8 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
                 </div>
               ) : (
                 <>
-                  <p className="text-center text-slate-400 text-sm mb-6 leading-relaxed">
-                    Publique seu cardápio gratuitamente no GitHub Pages. Insira seu Token de Acesso Pessoal (PAT) e o nome do repositório.
+                  <p className="text-center text-slate-400 text-sm mb-4 leading-relaxed">
+                    Publique seu cardápio gratuitamente no GitHub Pages.
                   </p>
                   
                   {publishError && (
@@ -528,16 +540,6 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
                   )}
 
                   <div className="space-y-4 mb-6">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-400 mb-1">GitHub Token (PAT)</label>
-                      <input 
-                        type="password" 
-                        value={githubToken}
-                        onChange={e => setGithubToken(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:border-cyan-500 outline-none"
-                        placeholder="ghp_xxxxxxxxxxxx"
-                      />
-                    </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-400 mb-1">Nome do Repositório</label>
                       <input 
