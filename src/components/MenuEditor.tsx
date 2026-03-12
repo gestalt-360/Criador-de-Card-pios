@@ -511,7 +511,7 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
               <div className="w-16 h-16 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto mb-4">
                 <Globe className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold text-center mb-2 text-white">Publicar no GitHub</h2>
+              <h2 className="text-2xl font-bold text-center mb-2 text-white">Publicar</h2>
               
               {publishSuccessUrl ? (
                 <div className="text-center">
@@ -541,7 +541,7 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
 
                   <div className="space-y-4 mb-6">
                     <div>
-                      <label className="block text-xs font-medium text-slate-400 mb-1">Token do GitHub (Classic)</label>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Código</label>
                       <input 
                         type="password" 
                         value={githubToken}
@@ -552,7 +552,7 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
                       <p className="text-[10px] text-slate-500 mt-1">Precisa ter permissão de "repo" e "workflow".</p>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-400 mb-1">Nome do Repositório</label>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Cardápio</label>
                       <input 
                         type="text" 
                         value={repoName}
