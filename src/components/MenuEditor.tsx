@@ -541,6 +541,17 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
 
                   <div className="space-y-4 mb-6">
                     <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Token do GitHub (Classic)</label>
+                      <input 
+                        type="password" 
+                        value={githubToken}
+                        onChange={e => setGithubToken(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:border-cyan-500 outline-none"
+                        placeholder="ghp_..."
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">Precisa ter permissão de "repo" e "workflow".</p>
+                    </div>
+                    <div>
                       <label className="block text-xs font-medium text-slate-400 mb-1">Nome do Repositório</label>
                       <input 
                         type="text" 
