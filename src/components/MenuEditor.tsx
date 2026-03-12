@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { MenuData, MenuCategory, MenuItem, Addon } from '../types';
-import { Plus, Trash2, GripVertical, Image as ImageIcon, ChevronDown, ChevronUp, Upload, Link, Globe } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Image as ImageIcon, ChevronDown, ChevronUp, Upload, Link, Globe, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { publishToGithub } from '../services/github';
 
 interface MenuEditorProps {
   menu: MenuData;
@@ -10,6 +11,11 @@ interface MenuEditorProps {
 
 export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [githubToken, setGithubToken] = useState('');
+  const [repoName, setRepoName] = useState('meu-cardapio');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishSuccessUrl, setPublishSuccessUrl] = useState('');
+  const [publishError, setPublishError] = useState('');
   
   const updateMenu = (updates: Partial<MenuData>) => {
     setMenu(prev => ({ ...prev, ...updates }));
@@ -17,6 +23,19 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
 
   const updateTheme = (key: keyof MenuData['theme'], value: string) => {
     setMenu(prev => ({ ...prev, theme: { ...prev.theme, [key]: value } }));
+  };
+
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    setPublishError('');
+    try {
+      const url = await publishToGithub(githubToken, repoName, menu);
+      setPublishSuccessUrl(url);
+    } catch (err: any) {
+      setPublishError(err.message || 'Erro desconhecido ao publicar.');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const addCategory = () => {
@@ -469,7 +488,7 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/80 z-40 backdrop-blur-sm"
-              onClick={() => setShowPublishModal(false)}
+              onClick={() => !isPublishing && setShowPublishModal(false)}
             />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
@@ -480,22 +499,75 @@ export default function MenuEditor({ menu, setMenu }: MenuEditorProps) {
               <div className="w-16 h-16 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto mb-4">
                 <Globe className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold text-center mb-2 text-white">Cardápio Pronto!</h2>
-              <p className="text-center text-slate-400 text-sm mb-6 leading-relaxed">
-                Seu cardápio está incrível e pronto para receber pedidos. Para colocá-lo online gratuitamente na Netlify:
-              </p>
-              <ol className="text-sm text-slate-300 space-y-3 mb-6 list-decimal list-inside bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <li>Clique em <strong className="text-white">Export to GitHub</strong> no topo da página.</li>
-                <li>Acesse a <strong className="text-white">Netlify</strong> e importe o repositório.</li>
-                <li>Adicione a variável <strong className="text-white">GEMINI_API_KEY</strong>.</li>
-                <li>Clique em <strong className="text-white">Deploy</strong>!</li>
-              </ol>
-              <button 
-                onClick={() => setShowPublishModal(false)}
-                className="w-full py-3 rounded-xl font-bold text-slate-950 shadow-lg active:scale-95 transition-transform bg-cyan-500 hover:bg-cyan-400"
-              >
-                Entendi!
-              </button>
+              <h2 className="text-2xl font-bold text-center mb-2 text-white">Publicar no GitHub</h2>
+              
+              {publishSuccessUrl ? (
+                <div className="text-center">
+                  <p className="text-green-400 mb-4">Cardápio publicado com sucesso!</p>
+                  <a href={publishSuccessUrl} target="_blank" rel="noreferrer" className="text-cyan-400 underline break-all mb-6 block">
+                    {publishSuccessUrl}
+                  </a>
+                  <p className="text-xs text-slate-400 mb-6">Pode levar alguns minutos para o link ficar online pela primeira vez.</p>
+                  <button 
+                    onClick={() => setShowPublishModal(false)} 
+                    className="w-full py-3 rounded-xl font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-colors"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-center text-slate-400 text-sm mb-6 leading-relaxed">
+                    Publique seu cardápio gratuitamente no GitHub Pages. Insira seu Token de Acesso Pessoal (PAT) e o nome do repositório.
+                  </p>
+                  
+                  {publishError && (
+                    <div className="bg-red-500/10 border border-red-500/50 text-red-400 text-sm p-3 rounded-lg mb-4">
+                      {publishError}
+                    </div>
+                  )}
+
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">GitHub Token (PAT)</label>
+                      <input 
+                        type="password" 
+                        value={githubToken}
+                        onChange={e => setGithubToken(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:border-cyan-500 outline-none"
+                        placeholder="ghp_xxxxxxxxxxxx"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Nome do Repositório</label>
+                      <input 
+                        type="text" 
+                        value={repoName}
+                        onChange={e => setRepoName(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:border-cyan-500 outline-none"
+                        placeholder="meu-cardapio"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setShowPublishModal(false)}
+                      className="flex-1 py-3 rounded-xl font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
+                      disabled={isPublishing}
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      onClick={handlePublish}
+                      disabled={isPublishing || !githubToken || !repoName}
+                      className="flex-1 py-3 rounded-xl font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                    >
+                      {isPublishing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Publicar'}
+                    </button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </>
         )}
